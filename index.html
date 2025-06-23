@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣十大老街尋禮 | 3D視覺化探索</title>
+    <!-- 載入 Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 載入 Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* 自定義字體 */
+        .font-inter {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* 自定義動畫 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 1s ease-out forwards;
+        }
+        
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px) rotateX(20deg); }
+            to { opacity: 1; transform: translateY(0) rotateX(0); }
+        }
+        .animate-fade-in-up {
+            animation: fadeInDown 0.8s ease-out forwards;
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: .5; }
+        }
+        .animate-pulse {
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes float {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+          100% { transform: translateY(0px); }
+        }
+        .animate-float {
+          animation: float 4s ease-in-out infinite;
+        }
+        
+        /* 3D 卡片效果 */
+        .card-3d {
+            transform: perspective(1000px) rotateX(5deg) rotateY(0deg);
+            transform-style: preserve-3d;
+            box-shadow: 
+                0 15px 35px rgba(50, 50, 93, 0.1), 
+                0 5px 15px rgba(0, 0, 0, 0.07),
+                inset 0 -2px 10px rgba(0, 0, 0, 0.1),
+                inset 0 2px 5px rgba(255, 255, 255, 0.5);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .card-3d:hover {
+            transform: perspective(1000px) rotateX(5deg) rotateY(0deg) translateY(-10px);
+            box-shadow: 
+                0 20px 50px rgba(50, 50, 93, 0.2), 
+                0 15px 25px rgba(0, 0, 0, 0.15),
+                inset 0 -3px 15px rgba(0, 0, 0, 0.15),
+                inset 0 3px 8px rgba(255, 255, 255, 0.6);
+        }
+        
+        .card-3d::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        /* 按鈕3D效果 */
+        .btn-3d {
+            transform: perspective(500px) rotateX(10deg);
+            transform-style: preserve-3d;
+            box-shadow: 
+                0 8px 15px rgba(0, 0, 0, 0.15),
+                0 5px 5px rgba(0, 0, 0, 0.1),
+                inset 0 -3px 5px rgba(0, 0, 0, 0.2),
+                inset 0 2px 3px rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-3d:hover {
+            transform: perspective(500px) rotateX(10deg) translateY(-5px);
+            box-shadow: 
+                0 12px 20px rgba(0, 0, 0, 0.2),
+                0 8px 10px rgba(0, 0, 0, 0.15),
+                inset 0 -4px 8px rgba(0, 0, 0, 0.25),
+                inset 0 3px 5px rgba(255, 255, 255, 0.4);
+        }
+        
+        .btn-3d::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        /* 台灣地圖背景 */
+        .taiwan-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            z-index: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 800'%3E%3Cpath fill='%235c6ac4' d='M550,250 Q600,200 650,250 Q700,300 650,350 Q600,400 550,350 Q500,300 550,250 Z'/%3E%3C/svg%3E");
+            background-size: 100% auto;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        
+        /* 粒子動畫 */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            animation: float 15s infinite linear;
+        }
+        
+        /* 內容區傾斜效果 */
+        .content-tilt {
+            transform: perspective(1000px) rotateY(-1deg);
+            transform-origin: left center;
+            border-left: 3px solid rgba(139, 92, 246, 0.3);
+        }
+        
+        .content-tilt-right {
+            transform: perspective(1000px) rotateY(1deg);
+            transform-origin: right center;
+            border-right: 3px solid rgba(139, 92, 246, 0.3);
+        }
+        
+        /* 標題3D文字效果 */
+        .text-3d {
+            text-shadow: 
+                0 1px 0 #ccc, 
+                0 2px 0 #c9c9c9,
+                0 3px 0 #bbb,
+                0 4px 0 #b9b9b9,
+                0 5px 0 #aaa,
+                0 6px 1px rgba(0,0,0,.1),
+                0 0 5px rgba(0,0,0,.1),
+                0 1px 3px rgba(0,0,0,.3),
+                0 3px 5px rgba(0,0,0,.2),
+                0 5px 10px rgba(0,0,0,.25);
+        }
+    </style>
+</head>
+<body class="font-inter bg-gradient-to-br from-indigo-900 via-purple-800 to-pink-900 min-h-screen flex flex-col items-center p-4 relative overflow-x-hidden">
+
+    <!-- 背景元素 -->
+    <div class="taiwan-bg animate-float"></div>
+    
+    <div class="particles" id="particles"></div>
+    
+    <div id="root" class="w-full flex flex-col items-center relative z-10"></div>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="text/babel">
+        // 台灣十大老街的資料
+        const oldStreetsData = [
+          {
+            id: 'lukang',
+            name: '鹿港老街及周邊地區',
+            location: '彰化縣',
+            rank: 1,
+            features: '被譽為台灣保存最完整的歷史街區之一，擁有豐富的傳統建築、廟宇和工藝品店，展現「一府二鹿三艋舺」的古樸風華。',
+            attractions: '摸乳巷、九曲巷、半邊井、天后宮、龍山寺、玉珍齋（綠豆糕、奶油酥餅）、牛舌餅。',
+            infoUrl: 'https://zh.wikipedia.org/wiki/%E9%B9%BF%E6%B8%AF%E9%8E%AE', // 鹿港老街維基百科連結
+            videoUrl: 'https://www.youtube.com/embed/X_w0CS8VoZU',
+            color: 'from-indigo-500 to-purple-500'
+          },
+          {
+            id: 'qishan',
+            name: '旗山老街',
+            location: '高雄市',
+            rank: 2,
+            features: '以巴洛克式建築和日式老屋聞名，曾是香蕉和蔗糖的重要集散地。老街充滿懷舊風情，並有許多特色小吃。',
+            attractions: '旗山車站、天后宮、旗山生活文化園區、香蕉冰、麵線羹、枝仔冰。',
+            infoUrl: 'https://zh.wikipedia.org/wiki/%E6%97%97%E5%B1%B1%E8%80%81%E8%A1%97', // 旗山老街維基百科連結
+            videoUrl: 'https://www.youtube.com/embed/1cQUJWsDeNg',
+            color: 'from-yellow-500 to-amber-500'
+          },
+          {
+            id: 'jiufen',
+            name: '瑞芳風景特定區（九份老街）',
+            location: '新北市',
+            rank: 3,
+            features: '依山傍海而建，獨特的階梯式建築和高掛的紅燈籠，營造出濃厚的懷舊氛圍，常被聯想到宮崎駿動畫《神隱少女》的場景。',
+            attractions: '阿妹茶樓、昇平戲院、金瓜石黃金博物館、芋圓、草仔粿、肉圓。',
+            infoUrl: 'https://zh.wikipedia.org/wiki/%E4%B9%9D%E4%BB%BD', // 九份維基百科連結
+            videoUrl: 'https://www.youtube.com/embed/TqQq3fqqYvI',
+            color: 'from-red-500 to-orange-500'
+          },
+          {
+            id: 'daxi',
+            name: '大溪老城區',
+            location: '桃園市',
+            rank: 4,
+            features: '保存良好的巴洛克式牌樓和閩南街屋，是台灣獨特的歷史街區之一。以木藝和豆干聞名。',
+            attractions: '大溪橋、李騰芳古宅、月眉休閒農業區、大溪豆干、月光餅、花生糖、陀螺。',
+            infoUrl: 'https://zh.wikipedia.org/wiki/%E5%A4%A7%E6%BA%AA%E8%80%81%E8%A1%97', // 大溪老街維基百科連結
+            videoUrl: 'https://www.youtube.com/embed/IT5DbMaaxVc',
+            color: 'from-emerald-500 to-teal-500'
+          },
+          {
+            id: 'tamsui',
+            name: '淡水金色水岸(淡水老街)',
+            location: '新北市',
+            rank: 5,
+            features: '位於淡水河畔，結合了自然美景與豐富的人文歷史。這裡不僅有古蹟，還有各式海鮮小吃和文創商品，是觀光客必訪之地。',
+            attractions: '淡水漁人碼頭、紅毛城、真理大學、小白宮、淡水阿給、魚丸、鐵蛋、魚酥。',
+            infoUrl: 'https://zh.wikipedia.org/wiki/%E6%B7%A1%E6%B0%B4%E8%80%81%E8%A1%97', // 淡水老街維基百科連結
+            videoUrl: 'https://www.youtube.com/embed/9Q7Vmid-LjY',
+            color: 'from-blue-500 to-cyan-500'
+          },
+          {
+            id: 'xinhua',
+            name: '新化老街',
+            location: '台南市',
+            rank: 6,
+            features: '擁有精緻的巴洛克式立面建築群，曾是台南重要的商業中心。老街風貌典雅，適合悠閒漫步。',
+            attractions: '楊逵文學紀念館、街役場、老街肉包、瓜瓜園地瓜。',
+            infoUrl: 'https://zh.wikipedia.org/wiki/%E6%96%B0%E5%8C%96%E8%80%81%E8%A1%97', // 新化老街維基百科連結
+            videoUrl: 'https://www.youtube.com/embed/dR-9uB2ua6M',
+            color: 'from-amber-500 to-yellow-500'
+          },
+          {
+            id: 'sanxia',
+            name: '三峽老街',
+            location: '新北市',
+            rank: 7,
+            features: '保存最完整的老街之一，有著獨特的紅磚拱廊和巴洛克式立面牌樓，充滿濃厚的歷史感。以金牛角麵包和藍染工藝聞名。',
+            attractions: '三峽祖師廟、三峽金牛角、藍染體驗、豬血糕、冬瓜茶。',
+            infoUrl: 'https://zh.wikipedia.org/wiki/%E4%B8%89%E5%B3%BD%E8%80%81%E8%A1%97', // 三峽老街維基百科連結
+            videoUrl: 'https://www.youtube.com/embed/AN1XOIO1Zac',
+            color: 'from-violet-500 to-purple-500'
+          },
+          {
+            id: 'yingge',
+            name: '鶯歌老街',
+            location: '新北市',
+            rank: 8,
+            features: '以陶瓷工藝聞名，是台灣陶瓷產業的重鎮。老街上聚集了許多陶瓷商店、工坊和展覽館，可以體驗手作樂趣。',
+            attractions: '鶯歌陶瓷博物館、陶瓷工廠、陶瓷藝品、陶藝DIY。',
+            infoUrl: 'https://zh.wikipedia.org/wiki/%E9%B6%BA%E6%AD%8C%E8%80%81%E8%A1%97', // 鶯歌老街維基百科連結
+            videoUrl: 'https://www.youtube.com/embed/whTN2m3ZOU4',
+            color: 'from-rose-500 to-pink-500'
+          },
+          {
+            id: 'neiwan',
+            name: '內灣老街',
+            location: '新竹縣',
+            rank: 9,
+            features: '充滿客家風情的山城老街，保有日式木造車站和懷舊電影院，以客家美食和文創商品為主。',
+            attractions: '內灣車站、內灣戲院、劉興欽漫畫館、野薑花粽、客家粄條、擂茶。',
+            infoUrl: 'https://zh.wikipedia.org/wiki/%E5%85%A7%E7%81%A3%E8%80%81%E8%A1%97', // 內灣老街維基百科連結
+            videoUrl: 'https://www.youtube.com/embed/WiM0I_Rh2Mc',
+            color: 'from-green-500 to-emerald-500'
+          },
+          {
+            id: 'yanshui',
+            name: '鹽水老街',
+            location: '台南市',
+            rank: 10,
+            features: '台灣現存最古老的街道之一，保留了許多清代及日治時期的建築。以每年元宵節的「鹽水蜂炮」聞名。',
+            attractions: '橋南老街聚落、月津港親水公園、八角樓、鹽水意麵、豬頭飯、冬瓜茶。',
+            infoUrl: 'https://zh.wikipedia.org/wiki/%E9%B9%BD%E6%B0%B4%E5%8D%80', // 鹽水區維基百科連結 (包含老街資訊)
+            videoUrl: 'https://www.youtube.com/embed/_60Pkgfc6F8',
+            color: 'from-cyan-500 to-blue-500'
+          }
+        ];
+
+        // 粒子系統
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // 隨機大小 (1-5px)
+                const size = Math.random() * 4 + 1;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // 隨機位置
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+                
+                // 隨機動畫延遲
+                particle.style.animationDelay = `${Math.random() * 15}s`;
+                
+                // 隨機透明度
+                particle.style.opacity = Math.random() * 0.7 + 0.3;
+                
+                container.appendChild(particle);
+            }
+        }
+        
+        // 主應用程式組件
+        function App() {
+          const [selectedOldStreet, setSelectedOldStreet] = React.useState(null);
+          
+          React.useEffect(() => {
+            createParticles();
+          }, []);
+
+          return (
+            <div className="min-h-screen flex flex-col items-center p-4 font-inter relative z-10">
+              {/* 頁面標題 - 添加3D文字效果 */}
+              <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-8 mt-4 text-center animate-fade-in text-3d">
+                台灣十大老街尋禮
+              </h1>
+              <h2 className="text-xl text-indigo-200 mb-10 text-center animate-fade-in">
+                探索最具魅力的歷史文化景點
+              </h2>
+
+              {/* 老街選擇按鈕區塊 */}
+              <div className="w-full max-w-5xl grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-10">
+                {oldStreetsData.map((street) => (
+                  <button
+                    key={street.id}
+                    onClick={() => setSelectedOldStreet(street)}
+                    className={`
+                      p-3 md:p-4 rounded-xl transition-all duration-300
+                      transform hover:scale-105
+                      text-base md:text-lg font-semibold text-white
+                      bg-gradient-to-br ${street.color}
+                      btn-3d
+                      ${selectedOldStreet?.id === street.id
+                        ? 'ring-4 ring-white ring-opacity-60 scale-105'
+                        : ''
+                      }
+                    `}
+                  >
+                    {street.rank}. {street.name.split('(')[0].trim()} {/* 顯示名次和老街名稱，去除括號內容 */}
+                  </button>
+                ))}
+              </div>
+
+              {/* 老街詳細資訊顯示區塊 */}
+              {selectedOldStreet && (
+                <div className="w-full max-w-5xl rounded-2xl p-6 md:p-8 mb-8 animate-fade-in-up card-3d bg-gradient-to-br from-gray-50 to-white">
+                  <h2 className="text-3xl md:text-4xl font-bold text-indigo-800 mb-2 text-center">
+                    {selectedOldStreet.name}
+                  </h2>
+                  <p className="text-lg text-indigo-600 mb-6 text-center font-medium">
+                    {selectedOldStreet.location}
+                  </p>
+
+                  {/* 介紹連結與影片區塊 */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    {/* 老街介紹網址連結區塊 */}
+                    <div className="flex flex-col items-center content-tilt">
+                      <h3 className="text-2xl font-bold text-purple-700 mb-3 text-center">點擊前往老街介紹頁面</h3>
+                      <a
+                        href={selectedOldStreet.infoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-full max-w-md h-48 rounded-xl shadow-lg border-2 border-indigo-200 overflow-hidden flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 transition-all duration-300 p-4 text-center btn-3d"
+                      >
+                        <p className="text-gray-800 font-bold text-lg mb-2">點擊前往 {selectedOldStreet.name} 介紹頁面</p>
+                        <p className="text-indigo-600 font-semibold text-base break-words px-2">(維基百科或其他介紹網頁)</p>
+                        <div className="mt-3 w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </div>
+                      </a>
+                    </div>
+
+                    {/* 介紹影片 */}
+                    <div className="flex flex-col items-center content-tilt-right">
+                      <h3 className="text-2xl font-bold text-purple-700 mb-3">介紹影片</h3>
+                      <div className="relative w-full max-w-md rounded-xl overflow-hidden shadow-lg btn-3d" style={{ paddingTop: '56.25%' }}> {/* 16:9 比例 */}
+                        <iframe
+                          className="absolute top-0 left-0 w-full h-full"
+                          src={selectedOldStreet.videoUrl}
+                          title={`${selectedOldStreet.name} 介紹影片`}
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        ></iframe>
+                      </div>
+                      {/* 影片版權聲明 */}
+                      <p className="text-sm text-gray-500 mt-2 text-center">
+                        本影片取自 YouTube 公開播放影片，純欣賞勿商用，其版權屬原創作者。<br/>
+                        看完請給原作者一個讚的鼓勵！👍
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 特色介紹 */}
+                  <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-6 shadow-inner mb-6 content-tilt border-l-4 border-indigo-400">
+                    <h3 className="text-2xl font-bold text-indigo-800 mb-3 flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      特色
+                    </h3>
+                    <p className="text-gray-800 leading-relaxed text-lg">{selectedOldStreet.features}</p>
+                  </div>
+
+                  {/* 景點與美食介紹 */}
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 shadow-inner content-tilt-right border-r-4 border-purple-400">
+                    <h3 className="text-2xl font-bold text-purple-800 mb-3 flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      景點與美食
+                    </h3>
+                    <p className="text-gray-800 leading-relaxed text-lg">{selectedOldStreet.attractions}</p>
+                  </div>
+                  
+                  {/* 返回按鈕 */}
+                  <div className="mt-8 text-center">
+                    <button
+                      onClick={() => setSelectedOldStreet(null)}
+                      className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg btn-3d hover:from-indigo-600 hover:to-purple-600 transition-all"
+                    >
+                      返回老街列表
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 初始提示訊息 */}
+              {!selectedOldStreet && (
+                <div className="w-full max-w-2xl bg-gradient-to-br from-indigo-700 to-purple-800 rounded-2xl shadow-2xl p-8 text-center text-white text-xl md:text-2xl animate-pulse card-3d">
+                  <p className="mb-4">請點擊上方按鈕，開始探索台灣十大老街！</p>
+                  <div className="flex justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 animate-bounce text-indigo-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+              
+              {/* 頁腳 */}
+              <footer className="mt-8 text-center text-indigo-200 text-sm">
+                <p>© 2023 台灣十大老街尋禮 | 探索台灣文化遺產</p>
+              </footer>
+            </div>
+          );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
